@@ -1,0 +1,8 @@
+# Especificación: Flujo de Autenticación Genérica
+
+MIENTRAS el [USUARIO] se encuentre en la [PÁGINA_LOGIN]
+CUANDO el [USUARIO] ingrese sus credenciales válidas
+EL SISTEMA DEBERÁ otorgar acceso al [DASHBOARD_PRINCIPAL].
+
+SI las credenciales ingresadas son inválidas
+EL SISTEMA DEBERÁ mostrar un mensaje de error indicando [MENSAJE_ERROR].

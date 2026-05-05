@@ -1,6 +1,0 @@
-WHILE the user is on the Wompi Login page
-WHEN the user enters valid credentials
-THEN the system shall grant access to the Dashboard.
-
-IF the user enters an invalid password
-THEN the system shall display an "Invalid Credentials" error message.
