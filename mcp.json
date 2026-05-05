@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "agent-browser": {
+      "command": "npx",
+      "args": ["-y", "agent-browser-mcp"],
+      "env": {
+        "AGENT_BROWSER_PATH": "agent-browser"
+      }
+    }
+  }
+}
