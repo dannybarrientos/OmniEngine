@@ -1,20 +1,62 @@
 {
   "6b4bbab7933e6eb9781d03eb7eb7a1f5ba65f5ee41a450bd5e72ff260b4b2ae0": {
-    "timestamp": "2026-05-15T04:43:46.136Z",
-    "a11yTree": {
-      "role": "WebArea",
-      "name": "Login Bancario",
-      "children": [
-        {
-          "role": "textbox",
-          "name": "Usuario"
-        },
-        {
-          "role": "button",
-          "name": "Continuar"
-        }
-      ]
-    },
-    "pomCode": "await page.fill('input[name=user]', 'admin@comfama.com');"
+    "timestamp": "2026-05-15T12:58:10.037Z",
+    "a11yTree": [
+      {
+        "id": "8",
+        "role": "RootWebArea",
+        "name": "Example Domain",
+        "description": ""
+      },
+      {
+        "id": "16",
+        "role": "heading",
+        "name": "Example Domain",
+        "description": ""
+      },
+      {
+        "id": "5",
+        "role": "StaticText",
+        "name": "Example Domain",
+        "description": ""
+      },
+      {
+        "id": "6",
+        "role": "StaticText",
+        "name": "This domain is for use in documentation examples without needing permission. Avoid use in operations.",
+        "description": ""
+      },
+      {
+        "id": "19",
+        "role": "link",
+        "name": "Learn more",
+        "description": ""
+      },
+      {
+        "id": "-1000000005",
+        "role": "InlineTextBox",
+        "name": "Example Domain",
+        "description": ""
+      },
+      {
+        "id": "-1000000006",
+        "role": "InlineTextBox",
+        "name": "This domain is for use in documentation examples without needing permission. Avoid use in operations.",
+        "description": ""
+      },
+      {
+        "id": "7",
+        "role": "StaticText",
+        "name": "Learn more",
+        "description": ""
+      },
+      {
+        "id": "-1000000007",
+        "role": "InlineTextBox",
+        "name": "Learn more",
+        "description": ""
+      }
+    ],
+    "pomCode": "await page.click('button'); // Basado en https://example.com/login"
   }
 }
