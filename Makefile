@@ -1,3 +1,6 @@
+include .env
+export
+
 .PHONY: test-vision build clean
 
 build:
@@ -9,3 +12,4 @@ test-vision: build
 
 clean:
 	@rm -rf bin/
+	@rm -rf agents-js/node_modules

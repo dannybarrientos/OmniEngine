@@ -5,9 +5,9 @@ const path = require('path');
 class MemoryOrchestrator {
     constructor(vectorStorePath) {
         this.vectorStorePath = vectorStorePath || path.join(__dirname, 'vector_store/cache.json');
-        this.similarityThreshold = 0.7; // Bajamos a 0.7 para ser más tolerantes con sitios reales
+        this.similarityThreshold = 0.7;
         this.memory = this.loadMemory();
-        console.log("[Kiro Kernel] 🧠 Memory Orchestrator inicializado.");
+        console.log("[Kiro Kernel] 🧠 Memory Orchestrator activo.");
     }
 
     loadMemory() {
@@ -32,13 +32,20 @@ class MemoryOrchestrator {
     retrieveContext(spec, tree) {
         const hash = this.generateSpecHash(spec);
         const data = this.memory[hash];
-        if (data) return { action: 'USE_CACHE', code: data.pomCode };
+        if (data) return { action: 'USE_CACHE', code: data.pomCode, status: data.status };
         return { action: 'GENERATE_NEW' };
     }
 
-    indexNewInteraction(spec, tree, code) {
-        const hash = this.generateSpecHash(spec);
-        this.memory[hash] = { timestamp: new Date(), a11yTree: tree, pomCode: code };
+    indexNewInteraction(earsSpec, cleanTree, generatedCode, status = 'DRAFT') {
+        if (!cleanTree || cleanTree.length < 2) return;
+        const hash = this.generateSpecHash(earsSpec);
+        this.memory[hash] = {
+            timestamp: new Date().toISOString(),
+            status,
+            nodesCount: cleanTree.length,
+            a11yTree: cleanTree,
+            pomCode: generatedCode
+        };
         this.saveMemory();
     }
 }

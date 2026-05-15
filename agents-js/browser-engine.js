@@ -1,70 +1,82 @@
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const { chromium } = require('playwright');
 const MemoryOrchestrator = require('./memory/memory_orchestrator');
 const SpecProcessor = require('./spec-processor');
+const AIConnector = require('./ai-connector');
 const fs = require('fs');
 const path = require('path');
 
-async function startOmniVision(url) {
+// --- UTILIDADES DE BLINDAJE ---
+
+function extractTargetNames(code) {
+    const regex = /(?:name|label|text):\s*['"](.*?)['"]|getByText\(['"](.*?)['"]\)|['"]text=(.*?)['"]/gi;
+    const matches = [];
+    let match;
+    while ((match = regex.exec(code)) !== null) {
+        const name = match[1] || match[2] || match[3];
+        if (name) matches.push(name.toLowerCase());
+    }
+    return matches;
+}
+
+async function doubleCheckHallucinations(code, cleanTree) {
+    const targets = extractTargetNames(code);
+    if (targets.length === 0) return true;
+
+    const errors = targets.filter(target => 
+        !cleanTree.some(node => 
+            node.name.toLowerCase().includes(target) || 
+            node.description?.toLowerCase().includes(target)
+        )
+    );
+
+    if (errors.length > 0) {
+        throw new Error(`Elementos no encontrados en la interfaz: ${errors.join(", ")}`);
+    }
+    return true;
+}
+
+// --- FLUJO PRINCIPAL ---
+
+async function startOmniVision(url, provider = 'gemini') {
     const orchestrator = new MemoryOrchestrator();
     const processor = new SpecProcessor();
-    const earsPath = path.join(__dirname, '../specs/auth-flow.ears');
+    const ai = new AIConnector();
     
-    if (!fs.existsSync(earsPath)) {
-        console.error(`[AGENT-JS] ❌ Error: Spec no encontrada en ${earsPath}`);
-        return;
-    }
+    const earsPath = path.join(__dirname, '../specs/auth-flow.ears');
     const earsSpec = fs.readFileSync(earsPath, 'utf8');
 
     console.log(`[AGENT-JS] 🌐 Navegando a: ${url}`);
-    
-    const browser = await chromium.launch({ 
-        headless: true,
-        args: ['--force-renderer-accessibility'] 
-    });
+    const browser = await chromium.launch({ headless: true, args: ['--force-renderer-accessibility'] });
     const page = await browser.newPage();
     
     try {
-        await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
+        await page.goto(url, { waitUntil: 'networkidle' });
 
-        console.log("[AGENT-JS] 👁️ Capturando Árbol de Accesibilidad (@eN)...");
+        const client = await page.context().newCDPSession(page);
+        const { nodes } = await client.send('Accessibility.getFullAXTree');
+        const cleanTree = processor.simplifyTree(nodes);
 
-        let rawA11yTree = null;
-        if (page.accessibility) {
-            rawA11yTree = await page.accessibility.snapshot({ interestingOnly: false });
-        }
-
-        if (!rawA11yTree) {
-            console.log("[AGENT-JS] ⚠️ Usando túnel CDP...");
-            const client = await page.context().newCDPSession(page);
-            const axTree = await client.send('Accessibility.getFullAXTree');
-            rawA11yTree = axTree.nodes;
-        }
-
-        if (!rawA11yTree) throw new Error("No se pudo obtener el árbol.");
-
-        // --- EL PROCESO SEMÁNTICO EMPIEZA AQUÍ ---
-        
-        // 1. Limpiamos el árbol inmediatamente
-        const cleanTree = processor.simplifyTree(rawA11yTree);
-        console.log(`[AGENT-JS] 🤏 Árbol reducido de ${rawA11yTree.length} a ${cleanTree.length} nodos.`);
-
-        // 2. Consultamos la memoria usando el árbol LIMPIO
         const decision = orchestrator.retrieveContext(earsSpec, cleanTree);
 
         if (decision.action === 'USE_CACHE') {
-            console.log("[AGENT-JS] ⚡ Cache Hit: Interfaz conocida.");
-            console.log(`[AGENT-JS] 🔧 Ejecutando lógica recuperada: ${decision.code}`);
+            console.log(`[AGENT-JS] ⚡ Cache Hit (${decision.status})`);
+            console.log(`[AGENT-JS] 🚀 Código: ${decision.code}`);
         } else {
-            console.log("[AGENT-JS] ⚠️ Estructura nueva detectada. Iniciando aprendizaje...");
+            console.log(`[AGENT-JS] ⚠️ Estructura nueva. Razonando con ${provider}...`);
+            let realCode = await ai.generateAutomationCode(earsSpec, cleanTree, provider);
             
-            // Aquí simularíamos la llamada a la IA
-            const generatedCode = `await page.click('button'); // Basado en ${url}`;
-            
-            // 3. Guardamos la versión LIMPIA para que la próxima vez el Cache Hit sea exacto
-            orchestrator.indexNewInteraction(earsSpec, cleanTree, generatedCode);
-            console.log("[AGENT-JS] 💾 Firma SEMÁNTICA guardada en vector store.");
+            try {
+                await doubleCheckHallucinations(realCode, cleanTree);
+                orchestrator.indexNewInteraction(earsSpec, cleanTree, realCode, 'DRAFT');
+                console.log("[AGENT-JS] ✅ Código validado y guardado.");
+            } catch (err) {
+                console.warn(`[AGENT-JS] 🤖 Alucinación detectada: ${err.message}. Reintentando...`);
+                const retryPrompt = `Error previo: ${err.message}. Usa solo estos elementos: ${JSON.stringify(cleanTree)}`;
+                realCode = await ai.generateAutomationCode(retryPrompt, cleanTree, provider);
+                orchestrator.indexNewInteraction(earsSpec, cleanTree, realCode, 'DRAFT');
+            }
         }
-
     } catch (error) {
         console.error(`[AGENT-JS] ❌ Error: ${error.message}`);
     } finally {
@@ -72,4 +84,4 @@ async function startOmniVision(url) {
     }
 }
 
-startOmniVision('https://example.com/login').catch(err => console.error(err));
+startOmniVision('https://example.com/login', 'gemini').catch(console.error);

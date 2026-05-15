@@ -1,2 +1,17 @@
-# Ignorar el caché semántico local
-memory/vector_store/*.json
+# Dependencias
+node_modules/
+package-lock.json
+
+# Binarios y compilados
+bin/
+core-engine/omniengine/core   # El binario de Go si se genera ahí
+
+# Datos de Memoria (Crucial: no subir el caché local)
+agents-js/memory/vector_store/*.json
+
+# Secretos (¡Nunca subir tus API Keys!)
+.env
+
+# Logs de sistema
+*.log
+.DS_Store

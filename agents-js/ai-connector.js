@@ -1,24 +1,30 @@
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const OpenAI = require("openai");
+
 class AIConnector {
-    constructor(provider = 'gemini') {
-        this.provider = provider;
-        this.apiKey = process.env.AI_API_KEY; // Usaremos variables de entorno por seguridad
+    constructor() {
+        this.genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "EMPTY");
+        this.openCodeClient = new OpenAI({
+            apiKey: process.env.OPENCODE_API_KEY || "EMPTY",
+            baseURL: process.env.OPENCODE_BASE_URL
+        });
     }
 
-    async generateAutomationCode(earsSpec, cleanTree) {
-        console.log(`[AI-CONNECTOR] 🧠 Solicitando generación de código a ${this.provider}...`);
-        
-        const prompt = `
-            Actúa como un Senior QA Automation Engineer.
-            Basado en la siguiente especificación EARS: "${earsSpec}"
-            Y este árbol de accesibilidad simplificado: ${JSON.stringify(cleanTree)}
-            
-            Genera EXCLUSIVAMENTE el código de Playwright (JavaScript) necesario para cumplir la Spec.
-            No incluyas explicaciones, solo el código ejecutable.
-        `;
+    async generateAutomationCode(earsSpec, cleanTree, provider = 'gemini') {
+        const prompt = `Actúa como Senior QA. Genera código Playwright para esta Spec: "${earsSpec}". 
+        Usa estos elementos: ${JSON.stringify(cleanTree)}. Solo código, sin markdown.`;
 
-        // Aquí irá la llamada real a la API según el proveedor que elijas
-        // Por ahora, devolvemos un placeholder que pronto será real
-        return `// Código generado por ${this.provider}\nawait page.goto('https://example.com');`;
+        try {
+            if (provider === 'gemini') {
+                const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+                const result = await model.generateContent(prompt);
+                return result.response.text().replace(/```javascript|```/g, "").trim();
+            }
+            // Lógica para OpenCode...
+            return `// Placeholder para ${provider}`;
+        } catch (e) {
+            return `// Error: ${e.message}`;
+        }
     }
 }
 
