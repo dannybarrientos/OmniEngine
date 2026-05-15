@@ -1,0 +1,3 @@
+MIENTRAS el [USUARIO] se encuentre en la [PÁGINA_LOGIN]
+CUANDO el [USUARIO] ingrese sus [CREDENCIALES]
+EL SISTEMA DEBERÁ redirigir al [DASHBOARD]

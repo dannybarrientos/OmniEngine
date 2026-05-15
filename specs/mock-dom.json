@@ -1,0 +1,7 @@
+{
+  "role": "WebArea", "name": "Login Bancario",
+  "children": [
+    { "role": "textbox", "name": "Usuario" },
+    { "role": "button", "name": "Continuar" }
+  ]
+}

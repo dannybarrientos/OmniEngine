@@ -1,4 +1,5 @@
 // memory/memory_orchestrator.js
+module.exports = MemoryOrchestrator;
 const crypto = require('crypto');
 
 class MemoryOrchestrator {
